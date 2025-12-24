@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Gesture Paper Burner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Shake Animation for Crumpling */
+    @keyframes shake-hard {
+      0% { transform: translate(0, 0) rotate(0deg); }
+      20% { transform: translate(-5px, 5px) rotate(-5deg); }
+      40% { transform: translate(5px, -5px) rotate(5deg); }
+      60% { transform: translate(-5px, 0px) rotate(-5deg); }
+      80% { transform: translate(5px, 0px) rotate(5deg); }
+      100% { transform: translate(0, 0) rotate(0deg); }
+    }
+    
+    .animate-shake {
+      animation: shake-hard 0.4s ease-in-out;
+    }
+
+    /* Burning Animation: Turns black, moves up, fades out */
+    @keyframes burn-complex {
+      0% { 
+        filter: brightness(1) sepia(0); 
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+      20% {
+        filter: brightness(0.8) sepia(0.5) hue-rotate(-20deg);
+      }
+      40% {
+        filter: brightness(0.4) sepia(1) hue-rotate(-50deg) contrast(2); /* Charring */
+        opacity: 0.9;
+      }
+      100% { 
+        filter: brightness(0); 
+        transform: scale(0.5) translateY(-100px); 
+        opacity: 0;
+      }
+    }
+    
+    .burning-effect {
+      animation: burn-complex 2s forwards ease-in;
+    }
+
+    /* Fire Overlay Animation */
+    @keyframes fire-pulse {
+      0% { opacity: 0; transform: scale(0.8); }
+      20% { opacity: 0.8; transform: scale(1.1); }
+      50% { opacity: 0.6; transform: scale(1.0); }
+      100% { opacity: 0; transform: scale(1.5); }
+    }
+    
+    .fire-overlay-anim {
+      animation: fire-pulse 1.5s forwards ease-out;
+    }
+
+    .paper-texture {
+      background-image: 
+        linear-gradient(#e5e7eb 1px, transparent 1px), 
+        linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+      background-size: 20px 20px;
+      background-color: #fdfbf7;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.05);
+    }
+    
+    .crumple-texture-base {
+      background-color: #f3f4f6;
+      background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' opacity='0.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.1'/%3E%3C/svg%3E");
+    }
+
+    /* Background: Scratched Dark Texture */
+    .bg-scratched-dark {
+      background-color: #0c0a09; /* stone-950 */
+      background-image: 
+        /* 1. Vignette */
+        radial-gradient(circle at 50% 50%, transparent 0%, rgba(0,0,0,0.8) 100%),
+        /* 2. Scratches - Layer 1 (Angled) */
+        repeating-linear-gradient(12deg, transparent, transparent 150px, rgba(255,255,255,0.03) 150px, rgba(255,255,255,0.03) 151px),
+        /* 3. Scratches - Layer 2 (Opposite Angle) */
+        repeating-linear-gradient(-25deg, transparent, transparent 230px, rgba(255,255,255,0.02) 230px, rgba(255,255,255,0.02) 231px),
+        /* 5. Noise Texture */
+        url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.08'/%3E%3C/svg%3E");
+      background-attachment: fixed;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://esm.sh/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://esm.sh/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://esm.sh/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://esm.sh/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://esm.sh/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://esm.sh/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/common": "https://esm.sh/@angular/common@^21.0.6?external=rxjs",
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@^21.0.6?external=rxjs",
+    "@angular/core": "https://esm.sh/@angular/core@^21.0.6?external=rxjs",
+    "@angular/compiler": "https://esm.sh/@angular/compiler@^21.0.6?external=rxjs"
+  }
+}
+</script>
+</head>
+<body class="bg-stone-900 text-white overflow-hidden h-screen w-screen select-none">
+  <!-- SVG Filters for distortion -->
+  <svg style="width:0;height:0;position:absolute;" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="crumple-noise-low" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.02" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="15" />
+      </filter>
+      <filter id="crumple-noise-high" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="40" />
+      </filter>
+    </defs>
+  </svg>
+  <app-root></app-root>
+</body>
+</html>

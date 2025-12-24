@@ -1,0 +1,7 @@
+{
+  "name": "Gesture Paper Burner",
+  "description": "Upload a file, crumple it with your fist, and burn it with your hand.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
